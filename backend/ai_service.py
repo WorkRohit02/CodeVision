@@ -17,7 +17,7 @@ def get_client():
     return _client
 
 
-MODEL_NAME = "gemini-2.5-flash"
+MODEL_NAME = "gemini-2.0-flash-lite"
 
 
 # ── Vision OCR ─────────────────────────────────────────────────────────────
