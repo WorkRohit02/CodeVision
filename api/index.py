@@ -49,8 +49,11 @@ class handler(BaseHTTPRequestHandler):
         self._send(200, b"")
 
     def do_GET(self):
-        body = json.dumps({"ok": True, "version": "6.0.0"}).encode()
-        self._send(200, body)
+        if "health" in self.path:
+            body = json.dumps({"ok": True, "version": "6.0.0"}).encode()
+            self._send(200, body)
+        else:
+            self._send(404, json.dumps({"detail": "Not found"}).encode())
 
     def do_POST(self):
         raw = self._read_body()
