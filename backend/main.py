@@ -15,7 +15,7 @@ import traceback
 
 from ai_service import analyze_code, ask_followup, extract_code_from_image
 
-app = FastAPI(title="CodeVision (Gemini)", version="4.1.0")
+app = FastAPI(title="CodeVision (Gemini)", version="5.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -55,6 +55,20 @@ class AskRequest(BaseModel):
     conversation_history: list = []
 
 
+# ── Helper: get API key from request or env ─────────────────────────────────
+
+def get_api_key(request: Request) -> Optional[str]:
+    """
+    Priority:
+    1. X-Google-Token header (user's OAuth token) — used directly as Bearer token
+    2. GEMINI_API_KEY env var (server fallback)
+    """
+    token = request.headers.get("X-Google-Token")
+    if token:
+        return token  # This is an OAuth access token
+    return os.getenv("GEMINI_API_KEY", "")
+
+
 # ── Health ──────────────────────────────────────────────────────────────────
 
 @app.get("/health")
@@ -62,23 +76,26 @@ async def health():
     key = os.getenv("GEMINI_API_KEY", "")
     ok  = bool(key and len(key) > 10)
     return JSONResponse({
-        "ok":         ok,
-        "key_prefix": key[:12] + "…" if ok else "NOT SET",
-        "model":      "gemini-1.5-flash",
-        "version":    "4.1.0",
+        "ok":      True,  # Always ok — users bring their own token
+        "mode":    "oauth",
+        "version": "5.0.0",
     })
 
 
 # ── /analyze ────────────────────────────────────────────────────────────────
 
 @app.post("/analyze")
-async def analyze(req: AnalyzeRequest):
+async def analyze(req: AnalyzeRequest, request: Request):
+    api_key = get_api_key(request)
+    if not api_key:
+        raise HTTPException(401, "No authentication token provided.")
+
     code = (req.code or "").strip()
 
     if not code and req.image_base64:
         try:
             raw = base64.b64decode(req.image_base64)
-            code = await extract_code_from_image(raw, req.image_media_type or "image/png")
+            code = await extract_code_from_image(raw, req.image_media_type or "image/png", api_key)
             if not code.strip():
                 raise HTTPException(400, "Could not extract code. Use a high-contrast screenshot.")
         except HTTPException:
@@ -90,7 +107,7 @@ async def analyze(req: AnalyzeRequest):
         raise HTTPException(400, "No code provided.")
 
     try:
-        result = await analyze_code(code, req.language)
+        result = await analyze_code(code, req.language, api_key)
         result["extracted_code"] = code if req.image_base64 else None
         return JSONResponse(result)
     except Exception as e:
@@ -101,7 +118,11 @@ async def analyze(req: AnalyzeRequest):
 # ── /ask ────────────────────────────────────────────────────────────────────
 
 @app.post("/ask")
-async def ask(req: AskRequest):
+async def ask(req: AskRequest, request: Request):
+    api_key = get_api_key(request)
+    if not api_key:
+        raise HTTPException(401, "No authentication token provided.")
+
     if not req.question.strip():
         raise HTTPException(400, "Empty question.")
     if not req.code.strip():
@@ -112,6 +133,7 @@ async def ask(req: AskRequest):
             req.code.strip(),
             req.language,
             req.conversation_history,
+            api_key,
         )
         return JSONResponse({"answer": answer})
     except Exception as e:

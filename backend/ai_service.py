@@ -2,63 +2,39 @@ import os
 import asyncio
 from google import genai
 
-_client = None
-
-def get_client():
-    global _client
-    if _client is None:
-        key = os.getenv("GEMINI_API_KEY", "")
-        if not key:
-            raise RuntimeError(
-                "GEMINI_API_KEY is not set. "
-                "Add it to backend/.env  →  GEMINI_API_KEY=AIza..."
-            )
-        _client = genai.Client(api_key=key)
-    return _client
-
-
 MODEL_NAME = "gemini-2.0-flash-lite"
 
 
-# ── Vision OCR ─────────────────────────────────────────────────────────────
+def _make_client(api_key: str) -> genai.Client:
+    return genai.Client(api_key=api_key)
 
-async def extract_code_from_image(image_bytes: bytes, media_type: str = "image/png") -> str:
+
+async def extract_code_from_image(image_bytes: bytes, media_type: str = "image/png", api_key: str = "") -> str:
     import PIL.Image
     import io
 
     def _call():
-        client = get_client()
+        client = _make_client(api_key)
         img = PIL.Image.open(io.BytesIO(image_bytes))
         response = client.models.generate_content(
             model=MODEL_NAME,
-            contents=[
-                img,
-                "Extract ALL code from this screenshot exactly as written. "
-                "Preserve every character and indentation. "
-                "Output ONLY the raw code — no explanation, no markdown fences."
-            ]
+            contents=[img, "Extract ALL code from this screenshot exactly as written. Preserve every character and indentation. Output ONLY the raw code — no explanation, no markdown fences."]
         )
         return response.text.strip()
 
     return await asyncio.to_thread(_call)
 
 
-# ── Language auto-detect ────────────────────────────────────────────────────
-
-async def detect_language(code: str) -> str:
+async def detect_language(code: str, api_key: str = "") -> str:
     def _call():
-        client = get_client()
+        client = _make_client(api_key)
         response = client.models.generate_content(
             model=MODEL_NAME,
-            contents="What programming language is this? Reply with ONLY the language name.\n\n"
-            + code[:1500]
+            contents="What programming language is this? Reply with ONLY the language name.\n\n" + code[:1500]
         )
         return response.text.strip()
-
     return await asyncio.to_thread(_call)
 
-
-# ── Prompts ─────────────────────────────────────────────────────────────────
 
 def _numbered(code: str) -> str:
     return "\n".join(f"Line {i+1}: {l}" for i, l in enumerate(code.split("\n")))
@@ -142,8 +118,6 @@ SUGGESTIONS_START
 SUGGESTIONS_END"""
 
 
-# ── Core analysis ───────────────────────────────────────────────────────────
-
 def _extract(text: str, start: str, end: str) -> str:
     try:
         s = text.index(start) + len(start)
@@ -153,25 +127,19 @@ def _extract(text: str, start: str, end: str) -> str:
         return ""
 
 
-def _sync_call(prompt: str) -> str:
-    client = get_client()
-    response = client.models.generate_content(
-        model=MODEL_NAME,
-        contents=prompt
-    )
+def _sync_call(prompt: str, api_key: str) -> str:
+    client = _make_client(api_key)
+    response = client.models.generate_content(model=MODEL_NAME, contents=prompt)
     return response.text
 
 
-async def analyze_code(code: str, language: str) -> dict:
+async def analyze_code(code: str, language: str, api_key: str = "") -> dict:
     p1 = prompt1(code, language)
     p2 = prompt2(code, language)
-
-    # Run both passes in parallel
     r1, r2 = await asyncio.gather(
-        asyncio.to_thread(_sync_call, p1),
-        asyncio.to_thread(_sync_call, p2),
+        asyncio.to_thread(_sync_call, p1, api_key),
+        asyncio.to_thread(_sync_call, p2, api_key),
     )
-
     return {
         "line_explanations": _extract(r1, "LINE_EXPLANATIONS_START", "LINE_EXPLANATIONS_END"),
         "bug_detection":     _extract(r1, "BUG_DETECTION_START",     "BUG_DETECTION_END"),
@@ -183,16 +151,12 @@ async def analyze_code(code: str, language: str) -> dict:
     }
 
 
-# ── Q&A ─────────────────────────────────────────────────────────────────────
-
-async def ask_followup(question: str, code: str, language: str, history: list) -> str:
+async def ask_followup(question: str, code: str, language: str, history: list, api_key: str = "") -> str:
     system_ctx = (
         f"You are a senior {language} engineer helping a student understand their code.\n\n"
         f"Code:\n{code}\n\n"
         "Answer clearly. Reference line numbers when helpful. Max 6 sentences unless a walkthrough is needed."
     )
-
-    # Build conversation as a single prompt with history
     convo_parts = [system_ctx, "\n\n--- Conversation History ---\n"]
     for t in history[-8:]:
         if t.get("question"):
@@ -200,15 +164,11 @@ async def ask_followup(question: str, code: str, language: str, history: list) -
         if t.get("answer"):
             convo_parts.append(f"Assistant: {t['answer']}")
     convo_parts.append(f"\nUser: {question}\nAssistant:")
-
     full_prompt = "\n".join(convo_parts)
 
     def _call():
-        client = get_client()
-        response = client.models.generate_content(
-            model=MODEL_NAME,
-            contents=full_prompt
-        )
+        client = _make_client(api_key)
+        response = client.models.generate_content(model=MODEL_NAME, contents=full_prompt)
         return response.text.strip()
 
     return await asyncio.to_thread(_call)
