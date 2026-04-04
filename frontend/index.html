@@ -7,7 +7,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Archivo:wght@300;400;500;600&family=Playfair+Display:ital,wght@0,600;1,500&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet"/>
-<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
 :root {
   --bg:#0a1931; --bg2:#0c1e3a; --bg3:#0f2348; --bg4:#122858; --bgi:#070e1c;
@@ -34,27 +33,39 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 /* ── LOGIN SCREEN ── */
 .login-screen{position:fixed;inset:0;z-index:200;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:0}
 .login-screen::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 40%,rgba(74,158,255,.06) 0%,transparent 70%)}
-.login-card{position:relative;background:var(--bg2);border:1px solid var(--b2);border-radius:24px;padding:48px 44px;display:flex;flex-direction:column;align-items:center;gap:24px;max-width:420px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.5)}
+.login-card{position:relative;background:var(--bg2);border:1px solid var(--b2);border-radius:24px;padding:48px 44px;display:flex;flex-direction:column;align-items:center;gap:22px;max-width:440px;width:90%;box-shadow:0 24px 64px rgba(0,0,0,.5)}
 .login-card::before{content:'';position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(201,168,76,.4),transparent);border-radius:24px 24px 0 0}
 .login-logo{display:flex;align-items:center;gap:10px;margin-bottom:4px}
 .login-logo-ic{width:42px;height:42px;border-radius:10px;background:var(--gold2);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;color:var(--gold)}
 .login-title{font-family:var(--fd);font-size:1.6rem}
 .login-title span{color:var(--gold);font-style:italic}
 .login-sub{font-family:var(--fui);font-size:.7rem;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:var(--tx3);text-align:center}
-.login-desc{font-size:.82rem;color:var(--tx2);text-align:center;line-height:1.7;max-width:300px}
+.login-desc{font-size:.82rem;color:var(--tx2);text-align:center;line-height:1.7;max-width:320px}
 .login-features{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .login-feat{font-family:var(--fui);font-size:.6rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;background:var(--bg3);border:1px solid var(--b2);color:var(--tx3);padding:3px 9px;border-radius:20px}
-.google-btn{display:flex;align-items:center;gap:10px;background:#fff;color:#1f1f1f;font-family:var(--fui);font-size:.78rem;font-weight:600;letter-spacing:.03em;padding:12px 24px;border-radius:10px;border:none;cursor:pointer;transition:all .2s;width:100%;justify-content:center;box-shadow:0 2px 12px rgba(0,0,0,.3)}
-.google-btn:hover{background:#f5f5f5;transform:translateY(-1px);box-shadow:0 6px 20px rgba(0,0,0,.4)}
-.google-btn svg{flex-shrink:0}
-.login-note{font-size:.68rem;color:var(--tx3);text-align:center;line-height:1.6}
+
+/* API key input */
+.key-field{width:100%;display:flex;flex-direction:column;gap:8px}
+.key-lbl{font-family:var(--fui);font-size:.65rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--tx3)}
+.key-input-row{display:flex;gap:8px;width:100%}
+.key-inp{flex:1;background:var(--bgi);border:1px solid var(--b2);border-radius:var(--r2);color:var(--tx1);font-family:var(--fm);font-size:.75rem;padding:11px 14px;outline:none;transition:border-color .2s;letter-spacing:.04em}
+.key-inp:focus{border-color:rgba(201,168,76,.4)}
+.key-inp::placeholder{color:var(--tx3);letter-spacing:.02em}
+.key-go{background:linear-gradient(135deg,#c9a84c,#e5c463);border:none;border-radius:var(--r2);color:#0a1931;font-family:var(--fui);font-size:.75rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:11px 20px;cursor:pointer;transition:all .2s;white-space:nowrap;flex-shrink:0}
+.key-go:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(201,168,76,.3)}
+.key-go:active{transform:none}
+.key-err{font-family:var(--fui);font-size:.65rem;color:var(--red);display:flex;align-items:center;gap:5px}
+.key-err.hidden{display:none}
+.key-hint{font-size:.7rem;color:var(--tx3);line-height:1.65;text-align:center}
+.key-hint a{color:var(--gold);text-decoration:none;border-bottom:1px solid rgba(201,168,76,.3);transition:border-color .2s}
+.key-hint a:hover{border-color:var(--gold)}
+.key-note{font-size:.65rem;color:var(--tx3);text-align:center;line-height:1.6;display:flex;align-items:flex-start;gap:6px;background:var(--bg3);border:1px solid var(--b1);border-radius:var(--r2);padding:10px 12px;max-width:100%}
+.key-note-ic{color:var(--teal);flex-shrink:0;margin-top:1px}
 
 /* ── USER PILL ── */
-.user-pill{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--b2);border-radius:20px;padding:4px 12px 4px 4px;cursor:pointer;transition:all .2s}
-.user-pill:hover{border-color:var(--b2);background:var(--bg4)}
-.user-av{width:26px;height:26px;border-radius:50%;object-fit:cover;border:1px solid var(--b2)}
-.user-av-ph{width:26px;height:26px;border-radius:50%;background:var(--gold2);border:1px solid rgba(201,168,76,.3);display:flex;align-items:center;justify-content:center;font-family:var(--fui);font-size:.62rem;font-weight:700;color:var(--gold)}
-.user-name{font-family:var(--fui);font-size:.65rem;font-weight:600;color:var(--tx2);max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.user-pill{display:flex;align-items:center;gap:8px;background:var(--bg3);border:1px solid var(--b2);border-radius:20px;padding:4px 12px 4px 10px}
+.user-name{font-family:var(--fm);font-size:.62rem;font-weight:500;color:var(--tx2);max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;letter-spacing:.03em}
+.key-dot{width:6px;height:6px;border-radius:50%;background:var(--teal);flex-shrink:0}
 .logout-btn{background:var(--red2);border:1px solid rgba(240,96,96,.22);color:var(--red);font-family:var(--fui);font-size:.58rem;font-weight:600;padding:2px 8px;border-radius:10px;cursor:pointer;transition:all .2s;margin-left:2px}
 .logout-btn:hover{background:rgba(240,96,96,.22)}
 
@@ -233,7 +244,7 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 .osec{display:flex;flex-direction:column;gap:10px}
 ::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--b2);border-radius:2px}
 @media(max-width:920px){.layout{grid-template-columns:1fr;padding:10px}.pr{max-height:none}.cxgrid{grid-template-columns:1fr 1fr}.hdr-sub,.sep{display:none}}
-@media(max-width:560px){.cxgrid{grid-template-columns:1fr}.panel{padding:13px}.otab{font-size:.57rem;padding:6px 5px}}
+@media(max-width:560px){.cxgrid{grid-template-columns:1fr}.panel{padding:13px}.otab{font-size:.57rem;padding:6px 5px}.login-card{padding:36px 24px}}
 </style>
 </head>
 <body>
@@ -253,19 +264,43 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
         <div style="font-family:var(--fui);font-size:.58rem;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--tx3);margin-top:2px">Powered by Gemini</div>
       </div>
     </div>
-    <p class="login-desc">AI-powered code analysis. Sign in with your Google account — uses your own Gemini quota, no API key needed.</p>
+
+    <p class="login-desc">AI-powered code analysis. Enter your free Gemini API key to get started — no account needed.</p>
+
     <div class="login-features">
       <span class="login-feat">Line explanations</span>
       <span class="login-feat">Bug detection</span>
       <span class="login-feat">Dry run</span>
       <span class="login-feat">Complexity</span>
       <span class="login-feat">Q&amp;A</span>
+      <span class="login-feat">30+ languages</span>
     </div>
-    <button class="google-btn" onclick="signInWithGoogle()">
-      <svg width="20" height="20" viewBox="0 0 24 24"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
-      Continue with Google
-    </button>
-    <p class="login-note">Your Google account's free Gemini quota is used.<br/>No API key required. Data stays private.</p>
+
+    <div class="key-field">
+      <span class="key-lbl">Your Gemini API Key</span>
+      <div class="key-input-row">
+        <input class="key-inp" id="keyInp" type="password"
+          placeholder="AIza..."
+          onkeydown="if(event.key==='Enter')submitKey()"
+          oninput="g('keyErr').classList.add('hidden')"
+        />
+        <button class="key-go" onclick="submitKey()">Enter →</button>
+      </div>
+      <div class="key-err hidden" id="keyErr">⚠ Please enter a valid API key (starts with AIza)</div>
+    </div>
+
+    <p class="key-hint">
+      Don't have a key? Get one free at<br/>
+      <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener">aistudio.google.com/apikey</a>
+      — sign in with Google, click <em>Create API Key</em>.
+    </p>
+
+    <div class="key-note">
+      <span class="key-note-ic">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 22C17.5 22 22 17.5 22 12C22 6.5 17.5 2 12 2C6.5 2 2 6.5 2 12C2 17.5 6.5 22 12 22Z" stroke="currentColor" stroke-width="1.5"/><path d="M12 8V12M12 16H12.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </span>
+      <span>Your key is stored only in your browser's memory and sent directly to Gemini. It is never saved or logged anywhere.</span>
+    </div>
   </div>
 </div>
 
@@ -286,11 +321,10 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
     <span class="hdr-sub">Powered by Gemini</span>
     <div class="hdr-r">
       <div class="spill" id="spill"><span class="sdot"></span><span id="spillTxt">Ready</span></div>
-      <div class="user-pill" id="userPill">
-        <div class="user-av-ph" id="userAvPh">?</div>
-        <img class="user-av hidden" id="userAv" src="" alt=""/>
-        <span class="user-name" id="userName">User</span>
-        <button class="logout-btn" onclick="signOut()">Sign out</button>
+      <div class="user-pill">
+        <span class="key-dot"></span>
+        <span class="user-name" id="keyDisplay">AIza...****</span>
+        <button class="logout-btn" onclick="signOut()">Change key</button>
       </div>
     </div>
   </div>
@@ -511,66 +545,28 @@ body::before{content:'';position:fixed;inset:0;pointer-events:none;z-index:0;
 <div class="toast hidden" id="toast"></div>
 
 <script>
-const API = 'https://codevision-mbpv.onrender.com';
-const GOOGLE_CLIENT_ID = '964175980506-0nrm724pqbcb817bogb01bqrrqb9gjup.apps.googleusercontent.com';
-
+const API = '';  // Same origin — Vercel routes /api/* to the backend
+let geminiApiKey = '';
 let curCode='', curLang='python';
 let imgB64=null, imgMime='image/png';
 let mode='code';
 let chatH=[], drSteps=[], drIdx=0, drTimer=null;
-let googleAccessToken = null;
-let currentUser = null;
 
-// ── GOOGLE AUTH ─────────────────────────────────────────────────────────────
+// ── API KEY LOGIN ────────────────────────────────────────────────────────────
 
-function signInWithGoogle() {
-  const client = google.accounts.oauth2.initTokenClient({
-    client_id: GOOGLE_CLIENT_ID,
-    scope: 'openid email profile',
-    callback: (response) => {
-      if (response.error) {
-        console.error('OAuth error:', response.error);
-        return;
-      }
-      googleAccessToken = response.access_token;
-      fetchUserInfo(response.access_token);
-    },
-  });
-  client.requestAccessToken();
-}
-
-async function fetchUserInfo(token) {
-  try {
-    const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    const user = await res.json();
-    currentUser = user;
-    showApp(user);
-  } catch(e) {
-    console.error('Failed to fetch user info:', e);
-    showApp({ name: 'User', email: '' });
+function submitKey() {
+  const val = g('keyInp').value.trim();
+  if (!val || !val.startsWith('AIza')) {
+    g('keyErr').classList.remove('hidden');
+    return;
   }
-}
-
-function showApp(user) {
+  geminiApiKey = val;
+  // Show masked key in header
+  g('keyDisplay').textContent = val.slice(0, 6) + '...' + val.slice(-4);
   g('loginScreen').classList.add('hidden');
   g('mainApp').classList.remove('hidden');
-
-  // Set user info in header
-  g('userName').textContent = user.given_name || user.name || 'User';
-  if (user.picture) {
-    g('userAv').src = user.picture;
-    g('userAv').classList.remove('hidden');
-    g('userAvPh').classList.add('hidden');
-  } else {
-    const initials = (user.name || 'U').charAt(0).toUpperCase();
-    g('userAvPh').textContent = initials;
-  }
-
   setPill('Gemini Ready', '');
   updateLn();
-
   g('langSel').addEventListener('change', e => {
     curLang = e.target.value;
     g('edLang').textContent = e.target.value;
@@ -578,14 +574,13 @@ function showApp(user) {
 }
 
 function signOut() {
-  googleAccessToken = null;
-  currentUser = null;
+  geminiApiKey = '';
+  g('keyInp').value = '';
   g('mainApp').classList.add('hidden');
   g('loginScreen').classList.remove('hidden');
-  // Reset state
   chatH=[]; drSteps=[]; drIdx=0;
   if(drTimer){clearInterval(drTimer);drTimer=null;}
-  showToast('Signed out successfully');
+  showToast('API key cleared');
 }
 
 // ── UI HELPERS ───────────────────────────────────────────────────────────────
@@ -624,20 +619,20 @@ function loadImg(f){
 }
 function rmImg(){imgB64=null;g('pvImg').src='';g('imgPv').classList.add('hidden');g('dropz').classList.remove('hidden');g('fileIn').value='';}
 
-// ── API CALLS (with OAuth token) ─────────────────────────────────────────────
+// ── API CALLS ────────────────────────────────────────────────────────────────
 
 async function post(path, body) {
-  const headers = { 'Content-Type': 'application/json' };
-  if (googleAccessToken) headers['X-Google-Token'] = googleAccessToken;
-
-  const res = await fetch(`${API}${path}`, {
+  const res = await fetch(path, {
     method: 'POST',
-    headers,
+    headers: {
+      'Content-Type': 'application/json',
+      'X-Api-Key': geminiApiKey
+    },
     body: JSON.stringify(body)
   });
   const text = await res.text();
   let data;
-  try { data = JSON.parse(text); } catch { throw new Error('Server returned non-JSON. Is the backend running?'); }
+  try { data = JSON.parse(text); } catch { throw new Error('Server error. Please try again.'); }
   if (!res.ok) throw new Error(data.detail || `Error ${res.status}`);
   return data;
 }
@@ -648,7 +643,7 @@ async function detectLang() {
   const btn = g('detectBtn');
   btn.textContent = '⚡ Detecting…'; btn.disabled = true;
   try {
-    const res = await post('/ask', {question:'What programming language is this? Reply with ONLY the language name — nothing else.',code:code.slice(0,2000),language:'auto',conversation_history:[]});
+    const res = await post('/api/ask', {question:'What programming language is this? Reply with ONLY the language name — nothing else.',code:code.slice(0,2000),language:'auto',conversation_history:[]});
     const detected = res.answer.trim();
     const map={python:['python'],javascript:['javascript','js'],typescript:['typescript','ts'],react:['react','jsx','react/jsx','react / jsx'],'react-ts':['react typescript','react + typescript','tsx'],cpp:['c++','cpp'],c:['c language','c programming','"c"'],java:['java'],kotlin:['kotlin'],csharp:['c#','csharp'],swift:['swift'],go:['go','golang'],rust:['rust'],php:['php'],ruby:['ruby'],bash:['bash','shell'],sql:['sql','mysql','postgresql'],html:['html'],css:['css','scss','sass'],r:['" r"','r language','r programming'],dart:['dart','flutter'],lua:['lua'],haskell:['haskell'],scala:['scala'],elixir:['elixir'],zig:['zig'],perl:['perl'],clojure:['clojure'],nodejs:['node.js','nodejs'],powershell:['powershell'],matlab:['matlab'],vue:['vue'],svelte:['svelte']};
     const dl = detected.toLowerCase();
@@ -669,7 +664,7 @@ async function analyze() {
   chatH=[]; g('chist').innerHTML='';
   try {
     g('lsub').textContent = mode==='image' ? 'Extracting code from image…' : 'Two parallel passes running…';
-    const data = await post('/analyze', {
+    const data = await post('/api/analyze', {
       code: mode==='code' ? code : null,
       image_base64: mode==='image' ? imgB64 : null,
       image_media_type: mode==='image' ? imgMime : null,
@@ -807,7 +802,7 @@ async function sendQ(){
   addBbl('q',q);ta.value='';autoH(ta);
   const th=addThink();g('sbtn').disabled=true;
   try{
-    const data=await post('/ask',{question:q,code:curCode,language:curLang,conversation_history:chatH});
+    const data=await post('/api/ask',{question:q,code:curCode,language:curLang,conversation_history:chatH});
     th.remove();addBbl('a',data.answer);
     chatH.push({question:q,answer:data.answer});
     if(chatH.length>10)chatH=chatH.slice(-10);

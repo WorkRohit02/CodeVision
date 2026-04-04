@@ -1,21 +1,16 @@
 import os
-from pathlib import Path
-from dotenv import load_dotenv
-
-load_dotenv()
-
-from fastapi import FastAPI, HTTPException, Request
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import HTMLResponse, FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from typing import Optional
 import base64
 import traceback
+from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+from typing import Optional
+from mangum import Mangum
 
 from ai_service import analyze_code, ask_followup, extract_code_from_image
 
-app = FastAPI(title="CodeVision (Gemini)", version="5.0.0")
+app = FastAPI(title="CodeVision (Gemini)", version="6.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -24,20 +19,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
-# ── Serve frontend ─────────────────────────────────────────────────────────
-FRONTEND = Path(__file__).parent.parent / "frontend"
-
-@app.get("/", response_class=HTMLResponse)
-async def root():
-    return FileResponse(FRONTEND / "index.html")
-
-@app.get("/index.html", response_class=HTMLResponse)
-async def index():
-    return FileResponse(FRONTEND / "index.html")
-
-if FRONTEND.exists():
-    app.mount("/static", StaticFiles(directory=str(FRONTEND)), name="static")
 
 
 # ── Models ─────────────────────────────────────────────────────────────────
@@ -55,40 +36,26 @@ class AskRequest(BaseModel):
     conversation_history: list = []
 
 
-# ── Helper: get API key from request or env ─────────────────────────────────
+# ── Helper: get API key from request header ─────────────────────────────────
 
 def get_api_key(request: Request) -> Optional[str]:
-    """
-    Priority:
-    1. X-Google-Token header (user's OAuth token) — used directly as Bearer token
-    2. GEMINI_API_KEY env var (server fallback)
-    """
-    token = request.headers.get("X-Google-Token")
-    if token:
-        return token  # This is an OAuth access token
-    return os.getenv("GEMINI_API_KEY", "")
+    return request.headers.get("X-Api-Key", "")
 
 
 # ── Health ──────────────────────────────────────────────────────────────────
 
-@app.get("/health")
+@app.get("/api/health")
 async def health():
-    key = os.getenv("GEMINI_API_KEY", "")
-    ok  = bool(key and len(key) > 10)
-    return JSONResponse({
-        "ok":      True,  # Always ok — users bring their own token
-        "mode":    "oauth",
-        "version": "5.0.0",
-    })
+    return JSONResponse({"ok": True, "version": "6.0.0"})
 
 
-# ── /analyze ────────────────────────────────────────────────────────────────
+# ── /api/analyze ────────────────────────────────────────────────────────────
 
-@app.post("/analyze")
+@app.post("/api/analyze")
 async def analyze(req: AnalyzeRequest, request: Request):
     api_key = get_api_key(request)
     if not api_key:
-        raise HTTPException(401, "No authentication token provided.")
+        raise HTTPException(401, "No API key provided.")
 
     code = (req.code or "").strip()
 
@@ -115,13 +82,13 @@ async def analyze(req: AnalyzeRequest, request: Request):
         raise HTTPException(500, f"Analysis error: {e}")
 
 
-# ── /ask ────────────────────────────────────────────────────────────────────
+# ── /api/ask ────────────────────────────────────────────────────────────────
 
-@app.post("/ask")
+@app.post("/api/ask")
 async def ask(req: AskRequest, request: Request):
     api_key = get_api_key(request)
     if not api_key:
-        raise HTTPException(401, "No authentication token provided.")
+        raise HTTPException(401, "No API key provided.")
 
     if not req.question.strip():
         raise HTTPException(400, "Empty question.")
@@ -139,3 +106,7 @@ async def ask(req: AskRequest, request: Request):
     except Exception as e:
         traceback.print_exc()
         raise HTTPException(500, f"Q&A error: {e}")
+
+
+# ── Vercel handler ──────────────────────────────────────────────────────────
+handler = Mangum(app)
