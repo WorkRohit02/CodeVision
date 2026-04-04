@@ -4,7 +4,6 @@ import base64
 import asyncio
 import traceback
 from http.server import BaseHTTPRequestHandler
-from ai_service import analyze_code, ask_followup, extract_code_from_image
 
 
 def _get_header(headers, name):
@@ -15,9 +14,16 @@ def _get_header(headers, name):
     return ""
 
 
-def _json(data, status=200):
-    body = json.dumps(data).encode()
-    return status, body
+def _run(coro):
+    """Safely run async code in Vercel serverless environment."""
+    try:
+        loop = asyncio.get_event_loop()
+        if loop.is_closed():
+            raise RuntimeError
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    return loop.run_until_complete(coro)
 
 
 class handler(BaseHTTPRequestHandler):
@@ -43,9 +49,9 @@ class handler(BaseHTTPRequestHandler):
         self._send(200, b"")
 
     def do_GET(self):
-        if self.path == "/api/health":
-            status, body = _json({"ok": True, "version": "6.0.0"})
-            self._send(status, body)
+        if "/api/health" in self.path:
+            body = json.dumps({"ok": True, "version": "6.0.0"}).encode()
+            self._send(200, body)
         else:
             self._send(404, json.dumps({"detail": "Not found"}).encode())
 
@@ -64,45 +70,43 @@ class handler(BaseHTTPRequestHandler):
             return
 
         try:
-            if self.path == "/api/analyze":
-                result = asyncio.run(self._analyze(req, api_key))
-                status, body = _json(result)
-                self._send(status, body)
+            if "/api/analyze" in self.path:
+                from ai_service import analyze_code, extract_code_from_image
 
-            elif self.path == "/api/ask":
-                answer = asyncio.run(ask_followup(
+                code = (req.get("code") or "").strip()
+
+                if not code and req.get("image_base64"):
+                    raw_img = base64.b64decode(req["image_base64"])
+                    code = _run(extract_code_from_image(
+                        raw_img,
+                        req.get("image_media_type", "image/png"),
+                        api_key
+                    ))
+                    if not code.strip():
+                        raise ValueError("Could not extract code from image.")
+
+                if not code:
+                    raise ValueError("No code provided.")
+
+                result = _run(analyze_code(code, req.get("language", "python"), api_key))
+                result["extracted_code"] = code if req.get("image_base64") else None
+                self._send(200, json.dumps(result).encode())
+
+            elif "/api/ask" in self.path:
+                from ai_service import ask_followup
+
+                answer = _run(ask_followup(
                     req.get("question", "").strip(),
                     req.get("code", "").strip(),
                     req.get("language", "python"),
                     req.get("conversation_history", []),
                     api_key
                 ))
-                status, body = _json({"answer": answer})
-                self._send(status, body)
+                self._send(200, json.dumps({"answer": answer}).encode())
 
             else:
                 self._send(404, json.dumps({"detail": "Not found"}).encode())
 
-        except Exception as e:
+        except Exception as ex:
             traceback.print_exc()
-            self._send(500, json.dumps({"detail": str(e)}).encode())
-
-    async def _analyze(self, req, api_key):
-        code = (req.get("code") or "").strip()
-
-        if not code and req.get("image_base64"):
-            raw_img = base64.b64decode(req["image_base64"])
-            code = await extract_code_from_image(
-                raw_img,
-                req.get("image_media_type", "image/png"),
-                api_key
-            )
-            if not code.strip():
-                raise ValueError("Could not extract code from image.")
-
-        if not code:
-            raise ValueError("No code provided.")
-
-        result = await analyze_code(code, req.get("language", "python"), api_key)
-        result["extracted_code"] = code if req.get("image_base64") else None
-        return result
+            self._send(500, json.dumps({"detail": str(ex)}).encode())
