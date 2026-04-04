@@ -622,13 +622,14 @@ function rmImg(){imgB64=null;g('pvImg').src='';g('imgPv').classList.add('hidden'
 // ── API CALLS ────────────────────────────────────────────────────────────────
 
 async function post(path, body) {
+  const action = path.includes('analyze') ? 'analyze' : 'ask';
   const res = await fetch(path, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       'X-Api-Key': geminiApiKey
     },
-    body: JSON.stringify(body)
+    body: JSON.stringify({...body, _action: action})
   });
   const text = await res.text();
   let data;
@@ -643,7 +644,7 @@ async function detectLang() {
   const btn = g('detectBtn');
   btn.textContent = '⚡ Detecting…'; btn.disabled = true;
   try {
-    const res = await post('/api/ask', {question:'What programming language is this? Reply with ONLY the language name — nothing else.',code:code.slice(0,2000),language:'auto',conversation_history:[]});
+    const res = await post('/api/analyze', {question:'What programming language is this? Reply with ONLY the language name — nothing else.',code:code.slice(0,2000),language:'auto',conversation_history:[]});
     const detected = res.answer.trim();
     const map={python:['python'],javascript:['javascript','js'],typescript:['typescript','ts'],react:['react','jsx','react/jsx','react / jsx'],'react-ts':['react typescript','react + typescript','tsx'],cpp:['c++','cpp'],c:['c language','c programming','"c"'],java:['java'],kotlin:['kotlin'],csharp:['c#','csharp'],swift:['swift'],go:['go','golang'],rust:['rust'],php:['php'],ruby:['ruby'],bash:['bash','shell'],sql:['sql','mysql','postgresql'],html:['html'],css:['css','scss','sass'],r:['" r"','r language','r programming'],dart:['dart','flutter'],lua:['lua'],haskell:['haskell'],scala:['scala'],elixir:['elixir'],zig:['zig'],perl:['perl'],clojure:['clojure'],nodejs:['node.js','nodejs'],powershell:['powershell'],matlab:['matlab'],vue:['vue'],svelte:['svelte']};
     const dl = detected.toLowerCase();
@@ -664,7 +665,7 @@ async function analyze() {
   chatH=[]; g('chist').innerHTML='';
   try {
     g('lsub').textContent = mode==='image' ? 'Extracting code from image…' : 'Two parallel passes running…';
-    const data = await post('/api/analyze', {
+    const data = await post('/api/ask', {
       code: mode==='code' ? code : null,
       image_base64: mode==='image' ? imgB64 : null,
       image_media_type: mode==='image' ? imgMime : null,
