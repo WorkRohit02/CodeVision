@@ -49,11 +49,8 @@ class handler(BaseHTTPRequestHandler):
         self._send(200, b"")
 
     def do_GET(self):
-        if "/api/health" in self.path:
-            body = json.dumps({"ok": True, "version": "6.0.0"}).encode()
-            self._send(200, body)
-        else:
-            self._send(404, json.dumps({"detail": "Not found"}).encode())
+        body = json.dumps({"ok": True, "version": "6.0.0"}).encode()
+        self._send(200, body)
 
     def do_POST(self):
         raw = self._read_body()
@@ -69,8 +66,12 @@ class handler(BaseHTTPRequestHandler):
             self._send(400, json.dumps({"detail": "Invalid JSON."}).encode())
             return
 
+        # Get action from request body since Vercel may strip path info
+        path = self.path
+        action = req.get("_action", "")
+
         try:
-            if "/api/analyze" in self.path:
+            if "analyze" in path or action == "analyze":
                 from ai_service import analyze_code, extract_code_from_image
 
                 code = (req.get("code") or "").strip()
@@ -92,7 +93,7 @@ class handler(BaseHTTPRequestHandler):
                 result["extracted_code"] = code if req.get("image_base64") else None
                 self._send(200, json.dumps(result).encode())
 
-            elif "/api/ask" in self.path:
+            elif "ask" in path or action == "ask":
                 from ai_service import ask_followup
 
                 answer = _run(ask_followup(
