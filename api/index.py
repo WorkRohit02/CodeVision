@@ -38,6 +38,8 @@ class handler(BaseHTTPRequestHandler):
         return self.rfile.read(length) if length else b""
 
     def _send(self, status, body, content_type="application/json"):
+        if isinstance(body, str):
+            body = body.encode()
         self.send_response(status)
         self.send_header("Content-Type", content_type)
         self.send_header("Access-Control-Allow-Origin", "*")
@@ -59,23 +61,26 @@ class handler(BaseHTTPRequestHandler):
         api_key = _get_header(self.headers, "X-Api-Key")
 
         if not api_key:
-            self._send(401, json.dumps({"detail": "No API key provided."}).encode())
+            self._send(401, json.dumps({"detail": "No API key provided."}))
             return
 
         try:
             req = json.loads(raw)
         except Exception:
-            self._send(400, json.dumps({"detail": "Invalid JSON."}).encode())
+            self._send(400, json.dumps({"detail": "Invalid JSON."}))
             return
 
-        path = self.path
+        # Normalise path — strip query string
+        path = self.path.split("?")[0].rstrip("/")
 
         try:
-            if "analyze" in path:
+            # ── /api/analyze  ────────────────────────────────────────────────
+            if path.endswith("analyze"):
                 from ai_service import analyze_code, extract_code_from_image
 
                 code = (req.get("code") or "").strip()
 
+                # Image mode: extract code first
                 if not code and req.get("image_base64"):
                     raw_img = base64.b64decode(req["image_base64"])
                     code = _run(extract_code_from_image(
@@ -90,24 +95,31 @@ class handler(BaseHTTPRequestHandler):
                     raise ValueError("No code provided.")
 
                 result = _run(analyze_code(code, req.get("language", "python"), api_key))
+                # Only set extracted_code when image was used
                 result["extracted_code"] = code if req.get("image_base64") else None
-                self._send(200, json.dumps(result).encode())
+                self._send(200, json.dumps(result))
 
-            elif "ask" in path:
+            # ── /api/ask  ────────────────────────────────────────────────────
+            elif path.endswith("ask"):
                 from ai_service import ask_followup
 
-                answer = _run(ask_followup(
-                    req.get("question", "").strip(),
-                    req.get("code", "").strip(),
-                    req.get("language", "python"),
-                    req.get("conversation_history", []),
-                    api_key
-                ))
-                self._send(200, json.dumps({"answer": answer}).encode())
+                question = (req.get("question") or "").strip()
+                code     = (req.get("code") or "").strip()
+                language = req.get("language", "python")
+                history  = req.get("conversation_history", [])
 
+                if not question:
+                    raise ValueError("No question provided.")
+                if not code:
+                    raise ValueError("No code provided for Q&A context.")
+
+                answer = _run(ask_followup(question, code, language, history, api_key))
+                self._send(200, json.dumps({"answer": answer}))
+
+            # ── unknown path ─────────────────────────────────────────────────
             else:
-                self._send(404, json.dumps({"detail": "Not found"}).encode())
+                self._send(404, json.dumps({"detail": f"Not found: {path}"}))
 
         except Exception as ex:
             traceback.print_exc()
-            self._send(500, json.dumps({"detail": str(ex)}).encode())
+            self._send(500, json.dumps({"detail": str(ex)}))
